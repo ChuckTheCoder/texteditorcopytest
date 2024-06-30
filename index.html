@@ -1,9 +1,279 @@
-<textarea id="myTextarea"></textarea>
-<button id="copyButton">Copy</button>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monaco Editor with Copy, Run, Clear, Download, Toggle Theme, and Fullscreen Buttons</title>
+<style>
+    /* Overall layout adjustments */
+    body {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0; /* Default background color */
+        transition: background-color 0.3s ease; /* Smooth transition for theme change */
+    }
+
+    /* Editor and output container */
+    .editor-container, .output-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-right: 20px;
+    }
+
+    /* Style adjustments for editor */
+    #editor {
+        flex: 1; /* Fill remaining space */
+        width: 100%;
+        min-height: 600px; /* Adjusted height */
+        border: 1px solid #ccc;
+    }
+
+    /* Output frame */
+    .output-container {
+        position: relative; /* Ensure relative positioning for fullscreen mode */
+        height: 100%; /* Full height by default */
+    }
+
+    #outputFrame {
+        width: 100%;
+        min-height: 600px; /* Adjusted minimum height */
+        border: 1px solid #ccc;
+    }
+
+    /* Button styles */
+    .button-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    button {
+        margin-right: 10px;
+        padding: 12px 24px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        outline: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        color: #fff;
+        text-transform: uppercase;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+        opacity: 0.8;
+    }
+
+    /* Theme-specific styles */
+    .dark-mode {
+        background-color: #333; /* Dark mode background color */
+        color: #fff; /* Dark mode text color */
+    }
+
+    /* Fullscreen button */
+    #fullscreenButton {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        padding: 12px 24px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        outline: none;
+        background-color: #007bff; /* Blue color for fullscreen button */
+        color: #fff;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    #fullscreenButton:hover {
+        opacity: 0.8;
+    }
+
+    /* Fullscreen mode */
+    .fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+    }
+
+    .fullscreen.dark-mode {
+        background-color: #333; /* Dark mode background color in fullscreen */
+        color: #fff; /* Dark mode text color in fullscreen */
+    }
+
+    .fullscreen.light-mode {
+        background-color: #f0f0f0; /* Light mode background color in fullscreen */
+        color: #333; /* Light mode text color in fullscreen */
+    }
+</style>
+</head>
+<body>
+
+<div class="editor-container">
+    <div class="button-container">
+        <button id="copyButton" style="background-color: #28a745;">Copy HTML Code 📋</button>
+        <button id="runButton" style="background-color: #007bff;">Run HTML Code ▶️</button>
+        <button id="clearButton" style="background-color: #dc3545;">Clear Editor 🗑️</button>
+        <button id="downloadButton" style="background-color: #17a2b8;">Download as HTML ⬇️</button>
+        <button id="themeToggle" style="background-color: #6c757d;">🌞</button>
+    </div>
+    <div id="editor"></div>
+</div>
+
+<div class="output-container">
+    <h1>Output</h1>
+    <button id="fullscreenButton">Fullscreen 🌐</button>
+    <div id="output">
+        <iframe id="outputFrame"></iframe>
+    </div>
+</div>
+
+<!-- Load the Monaco Editor library -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.22.3/min/vs/loader.js"></script>
 <script>
-document.getElementById('copyButton').addEventListener('click', function() {
-    var textarea = document.getElementById('myTextarea');
-    textarea.select(); // Select the text inside the textarea
-    document.execCommand('copy'); // Copy the selected text to the clipboard
-});
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.22.3/min/vs' }});
+
+    require(['vs/editor/editor.main'], function() {
+        // Initialize Monaco Editor
+        var editor = monaco.editor.create(document.getElementById('editor'), {
+            value: `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your HTML Page</title>
+</head>
+<body>
+
+<h1>Hello World!</h1>
+<p>This is your HTML content.</p>
+
+</body>
+</html>`,
+            language: 'html',
+            theme: 'vs-dark'
+        });
+
+        // Function to copy content to clipboard
+        document.getElementById('copyButton').addEventListener('click', function() {
+            var text = editor.getValue();
+            navigator.clipboard.writeText(text)
+                .then(function() {
+                    alert('HTML code copied to clipboard!');
+                })
+                .catch(function(err) {
+                    alert('Unable to copy HTML code to clipboard. Please copy manually.');
+                    console.error('Failed to copy text: ', err);
+                });
+        });
+
+        // Function to run HTML code
+        document.getElementById('runButton').addEventListener('click', function() {
+            var htmlCode = editor.getValue();
+            var outputFrame = document.getElementById('outputFrame');
+            var outputDocument = outputFrame.contentDocument || outputFrame.contentWindow.document;
+            outputDocument.open();
+            outputDocument.write(htmlCode);
+            outputDocument.close();
+        });
+
+        // Function to clear editor content
+        document.getElementById('clearButton').addEventListener('click', function() {
+            editor.setValue('');
+        });
+
+        // Function to download as HTML
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            var htmlCode = editor.getValue();
+            var projectName = prompt('Enter the project name:');
+            if (projectName) {
+                var filename = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.html';
+                var blob = new Blob([htmlCode], { type: 'text/html' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 0);
+            }
+        });
+
+        // Function to toggle light/dark mode
+        var body = document.body;
+        var themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                themeToggle.textContent = '🌜';
+            } else {
+                themeToggle.textContent = '🌞';
+            }
+        });
+
+        // Fullscreen functionality
+        var fullscreenButton = document.getElementById('fullscreenButton');
+        var outputContainer = document.querySelector('.output-container');
+        var originalOutputStyle = outputContainer.getAttribute('style') || '';
+        var isFullscreen = false;
+
+        fullscreenButton.addEventListener('click', function() {
+            if (!isFullscreen) {
+                outputContainer.classList.add('fullscreen');
+                outputContainer.classList.add(body.classList.contains('dark-mode') ? 'dark-mode' : 'light-mode');
+                outputContainer.setAttribute('style', originalOutputStyle + '; z-index: 1000;');
+                fullscreenButton.textContent = 'Exit Fullscreen 🌐';
+                isFullscreen = true;
+
+                // Hide other containers
+                var editorContainer = document.querySelector('.editor-container');
+                var containersToHide = document.querySelectorAll('.container:not(.output-container)');
+                editorContainer.style.display = 'none';
+                containersToHide.forEach(function(container) {
+                    container.style.display = 'none';
+                });
+
+                // Adjust outputFrame height
+                outputFrame.style.height = 'calc(100vh - 40px)'; // Adjust as needed
+            } else {
+                outputContainer.classList.remove('fullscreen');
+                outputContainer.classList.remove('dark-mode');
+                outputContainer.classList.remove('light-mode');
+                outputContainer.setAttribute('style', originalOutputStyle);
+                fullscreenButton.textContent = 'Fullscreen 🌐';
+                isFullscreen = false;
+
+                // Show other containers
+                var editorContainer = document.querySelector('.editor-container');
+                var containersToShow = document.querySelectorAll('.container');
+                editorContainer.style.display = 'flex';
+                containersToShow.forEach(function(container) {
+                    container.style.display = 'flex';
+                });
+
+                // Restore outputFrame height
+                outputFrame.style.height = 'calc(100% - 40px)'; // Adjust as needed
+            }
+        });
+    });
 </script>
+
+</body>
+</html>
