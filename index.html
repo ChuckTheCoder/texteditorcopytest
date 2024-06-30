@@ -1,0 +1,9 @@
+<textarea id="myTextarea"></textarea>
+<button id="copyButton">Copy</button>
+<script>
+document.getElementById('copyButton').addEventListener('click', function() {
+    var textarea = document.getElementById('myTextarea');
+    textarea.select(); // Select the text inside the textarea
+    document.execCommand('copy'); // Copy the selected text to the clipboard
+});
+</script>
